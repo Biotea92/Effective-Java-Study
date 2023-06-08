@@ -13,14 +13,13 @@ public class Example {
 
         // 정적 팩터리 메서드의 다섯가지 장점
         // 1. 이름을 가질 수 있다.
-        BigInteger bigInteger1 = new BigInteger(1, new Random());
-        BigInteger bigInteger2 = BigInteger.probablePrime(1, new Random());
+        BigInteger primeNumber1 = new BigInteger(100, new Random());
+        BigInteger primeNumber2 = BigInteger.probablePrime(100, new Random());
         // BigInteger.probablePrime(1, new Random()) 가 명시적으로 값이 소수인 BigInteger를 반환한다는 의미를 잘 나타냄
 
         // 2. 호출될 때마다 인스턴스를 새로 생성하지는 않아도 된다.
 
         // 3. 반환 타입의 하위 타입 객체를 반환할 수 있는 능력이 있다.
-        // 잘 이해 안된 다시보기
 
         // 4. 입력 매개 변수에 따라 매번 다른 클래스의 객체를 반환할 수 있다.
         // EnumSet.noneOf() 에서는 원소의 갯수에 따라 다른 하위타입의 인스턴스를 반환한다.
