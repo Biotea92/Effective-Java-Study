@@ -1,4 +1,4 @@
-package org.example.chapter02.item02;
+package org.example.chapter02.item02.hierarchicalbuilder;
 
 import java.util.Objects;
 

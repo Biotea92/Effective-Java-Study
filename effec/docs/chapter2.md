@@ -181,3 +181,82 @@
     ```java
     List<Complaint> litany = Collections.list(legacyLitany);
     ```
+
+<br>
+
+## **⭐️ 아이템 2 : 생성자에 매개변수가 많다면 빌더를 고려하라**
+
+정적 팩터리 메서드와 생성자는 선택적 매개 변수가 많을 수록 생성자를 많이 많들거나 정적 팩터리 메서드를 만들어야한다. 
+
+- ```점층적 생성자 패턴```
+    ```java
+    public class NutritionFacts {
+        private final int servingSize;  // (mL, 1회 제공량)     필수
+        private final int servings;     // (회, 총 n회 제공량)  필수
+        private final int calories;     // (1회 제공량당)       선택
+        private final int fat;          // (g/1회 제공량)       선택
+        private final int sodium;       // (mg/1회 제공량)      선택
+        private final int carbohydrate; // (g/1회 제공량)       선택
+
+        public NutritionFacts(int servingSize, int servings) {
+            this(servingSize, servings, 0);
+        }
+
+        public NutritionFacts(int servingSize, int servings,
+                            int calories) {
+            this(servingSize, servings, calories, 0);
+        }
+
+        public NutritionFacts(int servingSize, int servings,
+                            int calories, int fat) {
+            this(servingSize, servings, calories, fat, 0);
+        }
+
+        public NutritionFacts(int servingSize, int servings,
+                            int calories, int fat, int sodium) {
+            this(servingSize, servings, calories, fat, sodium, 0);
+        }
+        public NutritionFacts(int servingSize, int servings,
+                            int calories, int fat, int sodium, int carbohydrate) {
+            this.servingSize  = servingSize;
+            this.servings     = servings;
+            this.calories     = calories;
+            this.fat          = fat;
+            this.sodium       = sodium;
+            this.carbohydrate = carbohydrate;
+        }
+    }
+    ```
+  물론 요즘은 ide가 생성자를 만들어주지만 보기에 매우 나쁜 냄새가 난다.  
+- ```자바빈즈 패턴```
+    ```java
+    public class NutritionFacts {
+        // 매개변수들은 (기본값이 있다면) 기본값으로 초기화된다.
+        private int servingSize  = -1; // 필수; 기본값 없음
+        private int servings     = -1; // 필수; 기본값 없음
+        private int calories     = 0;
+        private int fat          = 0;
+        private int sodium       = 0;
+        private int carbohydrate = 0;
+
+        public NutritionFacts() { }
+        // Setters
+        public void setServingSize(int val)  { servingSize = val; }
+        public void setServings(int val)     { servings = val; }
+        public void setCalories(int val)     { calories = val; }
+        public void setFat(int val)          { fat = val; }
+        public void setSodium(int val)       { sodium = val; }
+        public void setCarbohydrate(int val) { carbohydrate = val; }
+
+        public static void main(String[] args) {
+            NutritionFacts cocaCola = new NutritionFacts();
+            cocaCola.setServingSize(240);
+            cocaCola.setServings(8);
+            cocaCola.setCalories(100);
+            cocaCola.setSodium(35);
+            cocaCola.setCarbohydrate(27);
+        }
+    }
+    ```
+    밑의 main메서드 처럼 생성자로 객체를 만든 후 setter를 통해 매개변수를 설정한다.  
+    하지만 객체를 만들고 많은 set메서드를 호출해야하는 단점이 생기고, 객체가 완전히 생성되기 직전까지 일관성이 무너진 상태에 놓인다. 이런 문제로 ```자바빈즈 패턴에서는 클래스를 불변으로 만들 수 없고``` 스레드의 안정성을 위해 프로그래머가 추가 작업을 해줘야만 한다. 

@@ -1,4 +1,4 @@
-package org.example.chapter02.item02;
+package org.example.chapter02.item02.hierarchicalbuilder;
 
 import java.util.EnumSet;
 import java.util.Objects;
@@ -8,7 +8,6 @@ import java.util.Set;
 
 // 참고: 여기서 사용한 '시뮬레이트한 셀프 타입(simulated self-type)' 관용구는
 // 빌더뿐 아니라 임의의 유동적인 계층구조를 허용한다.
-
 public abstract class Pizza {
     public enum Topping { HAM, MUSHROOM, ONION, PEPPER, SAUSAGE }
     final Set<Topping> toppings;
@@ -26,7 +25,7 @@ public abstract class Pizza {
         // "this"를 반환하도록 해야 한다.
         protected abstract T self();
     }
-
+    
     Pizza(Builder<?> builder) {
         toppings = builder.toppings.clone(); // 아이템 50 참조
     }
