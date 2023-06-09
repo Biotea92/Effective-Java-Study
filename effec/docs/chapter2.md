@@ -565,3 +565,67 @@ private static long sum() {
 ```
 위 메서드를 보면 + 연산될 때마다 Long 객체를 생성한다. 매우 비효율적이다.  
 ```박싱된 기본 타입보다는 기본타입을 사용하고, 의도치 않은 오토박싱이 숨어들지 않도록 주의하자.```
+
+<br>
+
+## **⭐️ 아이템 7 : 다 쓴 객체 참조를 해제하라**
+
+```java
+public class Stack {
+    private Object[] elements;
+    private int size = 0;
+    private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    public Stack() {
+        elements = new Object[DEFAULT_INITIAL_CAPACITY];
+    }
+
+    public void push(Object e) {
+        ensureCapacity();
+        elements[size++] = e;
+    }
+
+   public Object pop() {
+       if (size == 0)
+           throw new EmptyStackException();
+       return elements[--size];
+   }
+
+    /**
+     * 원소를 위한 공간을 적어도 하나 이상 확보한다.
+     * 배열 크기를 늘려야 할 때마다 대략 두 배씩 늘린다.
+     */
+    private void ensureCapacity() {
+        if (elements.length == size)
+            elements = Arrays.copyOf(elements, 2 * size + 1);
+    }
+
+    // 코드 7-2 제대로 구현한 pop 메서드 (37쪽)
+    // public Object pop() {
+    //     if (size == 0)
+    //         throw new EmptyStackException();
+    //     Object result = elements[--size];
+    //     elements[size] = null; // 다 쓴 참조 해제
+    //     return result;
+    // }
+
+    public static void main(String[] args) {
+        Stack stack = new Stack();
+        for (String arg : args)
+            stack.push(arg);
+
+        while (true)
+            System.err.println(stack.pop());
+    }
+}
+```
+
+```pop``` 메서드는 현재 객체를 반환한 뒤 Stack에 다 쓴 객체를 참조하고 있다.  
+gc를 가지는 언어에는 객체 참조 하나를 살려두면 그 객체 뿐만 아니라(그 객체들이 참조하는 모든 객체)를 회수하지 못한다.  
+이 해법은 주석처리된 ```pop``` 메서드 처럼 다 쓴 객체를 null처리하면 된다.
+
+### _**캐시 역시 메모리 누수를 일으키는 주범이다.**_
+- ```HashMap```의 경우는 ```WeakHashMap``` 사용을 고려해 캐시를 만들자 다 쓴 엔트리는 그 즉시 자동으로 제거될 것이다.
+- 더 복잡한 캐시를 만들고 싶다면 ```java.lang.ref``` 패키지를 직접 활용하자 
+- 리스너 혹은 콜백을 등록만하고 명확히 해지하지 않는다면 메모리 누수의 원인이 된다.
+    - 콜백을 약한 참조(weak reference)로 저장하면 가비지 컬렉터가 즉시 수거간다. ex) ```WeakHashMap```
