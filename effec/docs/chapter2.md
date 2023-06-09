@@ -259,4 +259,169 @@
     }
     ```
     밑의 main메서드 처럼 생성자로 객체를 만든 후 setter를 통해 매개변수를 설정한다.  
-    하지만 객체를 만들고 많은 set메서드를 호출해야하는 단점이 생기고, 객체가 완전히 생성되기 직전까지 일관성이 무너진 상태에 놓인다. 이런 문제로 ```자바빈즈 패턴에서는 클래스를 불변으로 만들 수 없고``` 스레드의 안정성을 위해 프로그래머가 추가 작업을 해줘야만 한다. 
+    하지만 객체를 만들고 많은 set메서드를 호출해야하는 단점이 생기고, 객체가 완전히 생성되기 직전까지 일관성이 무너진 상태에 놓인다.  
+    이런 문제로 ```자바빈즈 패턴에서는 클래스를 불변으로 만들 수 없고``` 스레드의 안정성을 위해 프로그래머가 추가 작업을 해줘야만 한다. 
+    - 빌더 패턴
+    ```java
+    public class NutritionFacts {
+        private final int servingSize;
+        private final int servings;
+        private final int calories;
+        private final int fat;
+        private final int sodium;
+        private final int carbohydrate;
+
+        public static class Builder {
+            // 필수 매개변수
+            private final int servingSize;
+            private final int servings;
+
+            // 선택 매개변수 - 기본값으로 초기화한다.
+            private int calories      = 0;
+            private int fat           = 0;
+            private int sodium        = 0;
+            private int carbohydrate  = 0;
+
+            public Builder(int servingSize, int servings) {
+                this.servingSize = servingSize;
+                this.servings    = servings;
+            }
+
+            public Builder calories(int val)
+            { calories = val;      return this; }
+            public Builder fat(int val)
+            { fat = val;           return this; }
+            public Builder sodium(int val)
+            { sodium = val;        return this; }
+            public Builder carbohydrate(int val)
+            { carbohydrate = val;  return this; }
+
+            public NutritionFacts build() {
+                return new NutritionFacts(this);
+            }
+        }
+
+        private NutritionFacts(Builder builder) {
+            servingSize  = builder.servingSize;
+            servings     = builder.servings;
+            calories     = builder.calories;
+            fat          = builder.fat;
+            sodium       = builder.sodium;
+            carbohydrate = builder.carbohydrate;
+        }
+
+        public static void main(String[] args) {
+            NutritionFacts cocaCola = new Builder(240, 8)
+                    .calories(100)
+                    .sodium(35)
+                    .carbohydrate(27)
+                    .build();
+        }
+    }
+    ```
+    빌더 패턴은 쓰기 쉽고 읽기도 쉽다. 심지어 Lombok을 쓰게 되면 쉽게 만들 수 있다.
+    - ```Lombok을 통한 빌더 패턴``` 
+    ```java
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Builder(builderMethodName = "")
+    public class NutritionFacts {
+
+        private int servingSize; // required
+        private int servings; // required
+        private int calories; // optional
+        private int fat; // optional
+        private int sodium; // optional
+        private int carbohydrate; // optional
+
+        public static NutritionFactsBuilder builder(int servingSize, int servings) {
+            return new NutritionFactsBuilder().servingSize(servingSize).servings(servings);
+        }
+
+        public static void main(String[] args) {
+            NutritionFacts nutritionFacts = NutritionFacts.builder(240, 8)
+                    .calories(100)
+                    .fat(0)
+                    .sodium(35)
+                    .carbohydrate(27)
+                    .build();
+        }
+    }
+    ```
+    여기서 ```@AllArgsConstructor(access = AccessLevel.PRIVATE)```는 생성자를 통한 객체생성을 막기위해 설정해두었고 ```builderMethodName = ""```와 builder메서드 재정의는 required값을 설정해주고 필요없는 메서드를 통한 객체생성을 막기 위해 설정해 주었다.  
+
+<br>
+빌더 패턴은 계층적으로 설계된 클래스와 함께 쓰기에 좋다.  
+
+<br>
+
+## **⭐️ 아이템 3 : private 생성자나 열거 타입으로 싱글턴임을 보장하라**
+
+싱글턴은 인스턴스를 오직 하나만 생성할 수 있는 클래스이다.
+
+- 주로 사용되는 형태의 정적 팩터리 방식의 싱글턴
+    ```java
+    public class Elvis {
+        private static final Elvis INSTANCE = new Elvis();
+        private Elvis() { }
+        public static Elvis getInstance() { 
+            return INSTANCE; 
+        }
+    }
+    ```
+
+- 책에서 추천하는 열거 타입 방식의 싱글턴 
+    ```java
+    public enum Elvis {
+        INSTANCE;
+
+        public void leaveTheBuilding() {
+            System.out.println("기다려 자기야, 지금 나갈께!");
+        }
+
+        // 이 메서드는 보통 클래스 바깥(다른 클래스)에 작성해야 한다!
+        public static void main(String[] args) {
+            Elvis elvis = Elvis.INSTANCE;
+            elvis.leaveTheBuilding();
+        }
+    }
+    ```
+> 현 주제에서는 싱글턴패턴이 주제가 아니다.  
+> LazyHolder패턴, Double-Checking-Locking 등 다양한 싱글턴을 만드는 방법이 있다.  
+>> [싱글턴의 다양한 구현 방법 블로그글](https://1-7171771.tistory.com/121) 
+
+<br>
+
+## **⭐️ 아이템 4 : 인스턴스화를 막으려거든 private 생성자를 사용하라**
+
+사실 아이템 주제에 모든 내용이 담겨 있다.  
+- 정적 메서드와 정적 필드만을 담은 클래스를 만들고 싶을 때 생성자를 통한 객체 생성을 막기 위해 private 생성자를 이용할 수 있다.
+    > 생성자를 명시하지 않으면 컴파일러가 자동으로 기본생성자를 만든다.
+- 테스트 해보기 위한 예시 코드
+    ```java
+    public class UtilityClass {
+        // 기본 생성자가 만들어지는 것을 막는다(인스턴스화 방지용).
+        private UtilityClass() {
+            throw new AssertionError();
+        }
+
+        public String hello() {
+            return "hello";
+        }
+        // 나머지 코드는 생략
+    }
+    ```
+    ```java
+    class UtilityClassTest {
+
+    @Test
+    void test() {
+    //        UtilityClass utilityClass = new UtilityClass();
+    //        Assertions.assertEquals("hello", utilityClass.hello());
+        }
+    }
+    ```
+    ```UtilityClass```의 생성자를 주석처리하면 테스트케이스의 컴파일을 진행할 수 있다.
+
+<br>
+
+## **⭐️ 아이템 5 : 자원을 직접 명시하지 말고 의존 객체 주입을 사용하라**
