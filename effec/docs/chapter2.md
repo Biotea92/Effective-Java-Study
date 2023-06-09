@@ -425,3 +425,87 @@
 <br>
 
 ## **⭐️ 아이템 5 : 자원을 직접 명시하지 말고 의존 객체 주입을 사용하라**
+
+만약 ```SpellChecker```객체와 ```Dictionary```객체가 존재할때 SpellChecker는 Dictionary를 참조 해야 하는 상황이라고 가정해보겠다. 
+
+```java
+public interface Dictionary {
+
+    boolean contains(String word);
+
+    List<String> closeWordsTo(String typo);
+}
+```
+Dictionary는 여러 종류가 존재한다.  
+```java
+public class SpellChecker {
+
+    private static final Dictionary dictionary = new DefaultDictionary();
+
+    private SpellChecker() {}
+
+    public static boolean isValid(String word) {
+        return dictionary.contains(word);
+    }
+
+    public static List<String> suggestions(String typo) {
+        return dictionary.closeWordsTo(typo);
+    }
+}
+```
+```java
+public class SpellChecker {
+
+    private final Dictionary dictionary = new DefaultDictionary();
+
+    private SpellChecker() {}
+
+    public static final SpellChecker INSTANCE = new SpellChecker();
+
+    public boolean isValid(String word) {
+        return dictionary.contains(word);
+    }
+
+    public List<String> suggestions(String typo) {
+        return dictionary.closeWordsTo(typo);
+    }
+}
+```
+위 처럼 정적 유틸리티나 싱글턴으로 SpellChecker를 만들게 되면 한 종류의 Dictionary만 존재할 때면 괜찮을지 몰라도 여러 종류의 Dictionary가 존재하면 SpellChecker가 유연하게 Dictionary를 참조하지 못하게 된다.  
+테스트 또한 용이하게 하지 못하게 된다. 
+
+<br>
+
+_**이를 극복하기 위해 인스턴스를 생성할 때 생성자에 필요한 자원을 넘겨주는 의존 객체 주입의 한 형태를 이용한다.**_
+
+```java
+public class SpellChecker {
+
+    private final Dictionary dictionary;
+
+    public SpellChecker(Dictionary dictionary) {
+        this.dictionary = dictionary;
+    }
+
+    public static void main(String[] args) {
+        SpellChecker spellChecker = new SpellChecker(new DefaultDictionary());
+    }
+}
+```
+또한 생성자에 자원 팩터리를 넘겨주는 방식을 이용할 수도 있다.  
+```Supplier<T>```인터페이스는 팩터리를 표현한 완벽한 예이다. 
+```java
+public class SpellChecker {
+
+    private final Dictionary dictionary;
+
+    public SpellChecker(Supplier<Dictionary> dictionarySupplier) {
+        this.dictionary = dictionarySupplier.get();
+    }
+
+    public static void main(String[] args) {
+        SpellChecker spellChecker = new SpellChecker(DefaultDictionary::new);
+    }
+}
+```
+스프링에서는 DI, IOC 기술을 통해 의존성 객체 주입을 효율적으로 이용할 수 있다.  
