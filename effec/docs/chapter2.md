@@ -508,4 +508,60 @@ public class SpellChecker {
     }
 }
 ```
-스프링에서는 DI, IOC 기술을 통해 의존성 객체 주입을 효율적으로 이용할 수 있다.  
+의존 객체 주입이 유연성과 테스트 용이성을 개선해주기는 하지만 의존성이 많아질 수록 어지러운 코드가 될 수도 있다.  
+스프링에서는 이를 극복하기 위해 DI, IOC 기술을 통해 의존성 객체 주입을 효율적으로 이용할 수 있다.  
+
+<br>
+
+## **⭐️ 아이템 6 : 불필요한 객체 생성을 피하라**
+
+똑같은 기능의 객체를 매번 생성하기 보다는 객체 하나를 재사용하는 편이 나을 때가 많다.
+```java
+String s1 = "name";
+String s2 = new String("name"); // 따라 하지 말 것
+```
+아래의 s2는 실행될 때마다 String 인스턴스를 새로만든다.  
+반면 s1은 이와 똑같은 문자열 리터럴을 사용하는 모든 코드가 같은 객체를 재사용함이 보장된다.
+
+```java
+public class RomanNumerals {
+    // 코드 6-1 성능을 훨씬 더 끌어올릴 수 있다!
+    static boolean isRomanNumeralSlow(String s) {
+        return s.matches("^(?=.)M*(C[MD]|D?C{0,3})"
+                + "(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
+    }
+
+    // 코드 6-2 값비싼 객체를 재사용해 성능을 개선한다.
+    private static final Pattern ROMAN = Pattern.compile(
+            "^(?=.)M*(C[MD]|D?C{0,3})"
+                    + "(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
+
+    static boolean isRomanNumeralFast(String s) {
+        return ROMAN.matcher(s).matches();
+    }
+}
+```
+위의코드에서 ```isRomanNumeralSlow```메서드에 포함된 ```String.matches```는 정규표현식으로 문자열 형태를 확인하는 가장 쉬운 방법이지만, 성능이 중요한 상황에서 반복해 사용하기엔 적합하지 않다.  그 이유는 메서드에서 찾을 수 있다.
+```java
+public boolean matches(String regex) {
+    return Pattern.matches(regex, this);
+}
+```
+메서드 내에서 ```Pattern``` 인스턴스를 생성하기 때문이다. 반복문을 돌게되면 ```Pattern``` 인스턴스는 한 번 쓰고 버려지고를 반복한다.  
+따라서 ```Pattern``` 인스턴스를 캐싱해서 재사용하면 성능을 개선할 수 있다. 
+```java
+private static final Pattern ROMAN = {...}
+```
+
+```또한 오토박싱을 박싱된 Type을 사용할 때 조심해야한다.```
+의미상 별다를 바 없게 느껴지지만 성능상에는 그렇지 않다. 
+```java
+private static long sum() {
+    Long sum = 0L;
+    for (long i = 0; i <= Integer.MAX_VALUE; i++)
+        sum += i;
+    return sum;
+}
+```
+위 메서드를 보면 + 연산될 때마다 Long 객체를 생성한다. 매우 비효율적이다.  
+```박싱된 기본 타입보다는 기본타입을 사용하고, 의도치 않은 오토박싱이 숨어들지 않도록 주의하자.```
