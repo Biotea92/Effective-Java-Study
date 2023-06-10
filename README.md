@@ -26,6 +26,10 @@ git checkout -b {your-name}
 
 ## 📌 Study 진행 현황
 
+<details>
+<summary> 1주차 (2장 객체 생성과 파괴) </summary>
+<div markdown="1">
+
 ### 1주차 (2장 객체 생성과 파괴) 
 - 발표일 2023-06-10
 
@@ -40,3 +44,16 @@ git checkout -b {your-name}
 | 아이템 7 : 다 쓴 객체 참조를 해제하라 | yong |
 | 아이템 8 : finalizer와 cleaner 사용을 피하라 | hee |
 | 아이템 9 : try-finally보다는 try-with-resources를 사용하라 | jong |
+  
+</div>
+</details>
+
+<details>
+<summary> 2주차 (3장 모든 객체의 공통 메서드) </summary>
+<div markdown="1">
+
+### 2주차 (3장 모든 객체의 공통 메서드)
+- 발표일 2023-06-17
+  
+</div>
+</details>
