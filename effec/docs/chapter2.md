@@ -1,5 +1,14 @@
 # 🎁 **객체의 생성과 파괴**
-[예제 코드 링크](https://github.com/WegraLee/effective-java-3e-source-code)
+[예제 코드 링크](https://github.com/WegraLee/effective-java-3e-source-code)  
+[아이템1-생성자 대신 정적 팩터리 메서드를 고려하라](#⭐️-아이템-1--생성자-대신-정적-팩터리-메서드를-고려하라)  
+[아이템2-생성자에 매개변수가 많다면 빌더를 고려하라](#⭐️-아이템-2--생성자에-매개변수가-많다면-빌더를-고려하라)  
+[아이템3-private 생성자나 열거 타입으로 싱글턴임을 보장하라](#⭐️-아이템-3--private-생성자나-열거-타입으로-싱글턴임을-보장하라)  
+[아이템4-인스턴스화를 막으려거든 private 생성자를 사용하라](#⭐️-아이템-4--인스턴스화를-막으려거든-private-생성자를-사용하라)  
+[아이템5-자원을 직접 명시하지 말고 의존 객체 주입을 사용하라](#⭐️-아이템-5--자원을-직접-명시하지-말고-의존-객체-주입을-사용하라)  
+[아이템6-불필요한 객체 생성을 피하라](#⭐️-아이템-6--불필요한-객체-생성을-피하라)  
+[아이템7-다 쓴 객체 참조를 해제하라](#⭐️-아이템-7--다-쓴-객체-참조를-해제하라)  
+[아이템8-finalizer와 cleaner 사용을 피하라](#⭐️-아이템-8--finalizer와-cleaner-사용을-피하라)  
+[아이템9-try-finally보다는 try-with-resources를 사용하라](#⭐️-아이템-9--try-finally보다는-try-with-resources를-사용하라)  
 
 ## **⭐️ 아이템 1 : 생성자 대신 정적 팩터리 메서드를 고려하라**
 
@@ -134,9 +143,9 @@
 5. 정적 팩터리 메서드를 작성하는 시점에는 반환할 객체의 클래스가 존재하지 않아도 된다. 
     - 이런 유연함은 서비스 제공자 프레임 워크를 만드는 근간이 된다. 대표적으로 ```JDBC```가 있다.
         > ```Connection```이 서비스 인터페이스 역할을,  
-        > ```DriverManager.registerDriver```이 제공자 등록 API 역할을,  
-        > ```DriverManager.getConnection```이 접근 API 역할을,  
-        > ```Driver```가 서비스 제공자 인터페이스 역할을 수행한다.
+         ```DriverManager.registerDriver```이 제공자 등록 API 역할을,  
+         ```DriverManager.getConnection```이 접근 API 역할을,  
+         ```Driver```가 서비스 제공자 인터페이스 역할을 수행한다.
 
 <br>
 
@@ -347,7 +356,7 @@
         }
     }
     ```
-    여기서 ```@AllArgsConstructor(access = AccessLevel.PRIVATE)```는 생성자를 통한 객체생성을 막기위해 설정해두었고 ```builderMethodName = ""```와 builder메서드 재정의는 required값을 설정해주고 필요없는 메서드를 통한 객체생성을 막기 위해 설정해 주었다.  
+    여기서 ```@AllArgsConstructor(access = AccessLevel.PRIVATE)```는 생성자를 통한 객체생성을 막기위해 설정해두었고 ```builderMethodName = ""```와 ```builder```메서드 재정의는 required값을 설정해주고 필요없는 메서드를 통한 객체생성을 막기 위해 설정해 주었다.  
 
 <br>
 빌더 패턴은 계층적으로 설계된 클래스와 함께 쓰기에 좋다.  
@@ -705,3 +714,6 @@ _**cleaner는 안전망 역할이나 중요하지 않은 네이티브 자원 회
 
 
 ## **⭐️ 아이템 9 : try-finally보다는 try-with-resources를 사용하라**
+
+꼭 회수해야 하는 자원은 예외 없이 ```try-finally``` 말고 ```try-resources```를 사용하자.  
+코드는 더 짧고 분명해지고, 만들어지는 예외 정보도 유용하다. 
