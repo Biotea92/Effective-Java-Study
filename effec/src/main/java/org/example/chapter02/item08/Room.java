@@ -4,7 +4,6 @@ import java.lang.ref.Cleaner;
 
 // 코드 8-1 cleaner를 안전망으로 활용하는 AutoCloseable 클래스 (44쪽)
 public class Room implements AutoCloseable {
-
     private static final Cleaner cleaner = Cleaner.create();
 
     // 청소가 필요한 자원. 절대 Room을 참조해서는 안 된다!
@@ -16,8 +15,7 @@ public class Room implements AutoCloseable {
         }
 
         // close 메서드나 cleaner가 호출한다.
-        @Override
-        public void run() {
+        @Override public void run() {
             System.out.println("Cleaning room");
             numJunkPiles = 0;
         }
@@ -34,8 +32,7 @@ public class Room implements AutoCloseable {
         cleanable = cleaner.register(this, state);
     }
 
-    @Override
-    public void close() {
+    @Override public void close() {
         cleanable.clean();
     }
 }

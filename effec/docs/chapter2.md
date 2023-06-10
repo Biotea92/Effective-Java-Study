@@ -629,3 +629,76 @@ gc를 가지는 언어에는 객체 참조 하나를 살려두면 그 객체 뿐
 - 더 복잡한 캐시를 만들고 싶다면 ```java.lang.ref``` 패키지를 직접 활용하자 
 - 리스너 혹은 콜백을 등록만하고 명확히 해지하지 않는다면 메모리 누수의 원인이 된다.
     - 콜백을 약한 참조(weak reference)로 저장하면 가비지 컬렉터가 즉시 수거간다. ex) ```WeakHashMap```
+
+
+## **⭐️ 아이템 8 : finalizer와 cleaner 사용을 피하라**
+
+_**자바는 finalizer와 cleaner라는 객체 소멸자를 제공한다.**_
+
+- finalizer : 예측할 수 없고, 상황에 따라 위험할 수 있어 일반적으로 불필요하다.
+- cleaner : finalizer보다는 덜 위험하지만, 여전히 예측할 수 없고, 느리고, 일반적으로 불필요하다. 
+
+두 소멸자 모두 즉시 수행된다는 보장이 없다. ```즉, 제때 실행되어야 하는 작업은 절대 할 수 없다.```  
+
+이팩티브 자바 책에서는 이후로 약 한장 반이 넘게 두 메서드의 욕을 정성스럽게 써놓았다. 그리고 대신해줄 묘안으로 ```AutoCloseable을 구현```하라고 제시한다.
+
+### cleaner와 finalizer는 어디에 쓰는 물건인가?
+
+1. 자원의 소유자가 close 메서드를 호출하지 않는 것에 대비한 안전망 역할이다. 
+    - 자원 회수를 늦게 해주는 것보다 아예 안하는 것보다 낫다. 
+        > ex ) FileInputStream, FileOutputStream, ThreadPoolExcutor
+2. 네이티브 피어와 연결된 객체에서 사용한다.
+    - 네이티브 피어는 자바 객체가 아니니 gc가 그 존재를 알지 못한다. 따라서 cleaner와 finalizer를 쓰기에 적당하지만 즉시, 자원을 회수하고 싶다면 close메서드를 사용하자
+
+finalizer는 override하여 사용하면 되지만 cleaner는 AutoCloseable을 직접 구현해서 사용하면된다. 
+
+```java
+public class Room implements AutoCloseable {
+    private static final Cleaner cleaner = Cleaner.create();
+
+    // 청소가 필요한 자원. 절대 Room을 참조해서는 안 된다!
+    private static class State implements Runnable {
+        int numJunkPiles; // Number of junk piles in this room
+
+        State(int numJunkPiles) {
+            this.numJunkPiles = numJunkPiles;
+        }
+
+        // close 메서드나 cleaner가 호출한다.
+        @Override public void run() {
+            System.out.println("Cleaning room");
+            numJunkPiles = 0;
+        }
+    }
+
+    // 방의 상태. cleanable과 공유한다.
+    private final State state;
+
+    // cleanable 객체. 수거 대상이 되면 방을 청소한다.
+    private final Cleaner.Cleanable cleanable;
+
+    public Room(int numJunkPiles) {
+        state = new State(numJunkPiles);
+        cleanable = cleaner.register(this, state);
+    }
+
+    @Override public void close() {
+        cleanable.clean();
+    }
+}
+```
+close메서드에서 Cleanerable의 clean을 호출하면 run을 호출한다.  
+또한 gc가 Room객체를 회수할때까지 close를 호출하지 않는다면 cleaner가 State의 run 메서드를 호출해줄 것을 바라고 안전망 역할을 해준다. 
+
+하지만 자동 청소는 try-with-resources블록으로 감싸면 필요하지 않다.
+```java
+public class Adult {
+    public static void main(String[] args) {
+        try (Room myRoom = new Room(7)) {
+            System.out.println("안녕~");
+        }
+    }
+}
+```
+
+_**cleaner는 안전망 역할이나 중요하지 않은 네이티브 자원 회수용으로만 사용하자. 성능은 절대 보장하지 못한다.**_
