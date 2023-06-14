@@ -14,5 +14,8 @@ public class CounterPoint extends Point {
         super(x, y);
         counter.incrementAndGet();
     }
-    public static int numberCreated() { return counter.get(); }
+
+    public static int numberCreated() {
+        return counter.get();
+    }
 }

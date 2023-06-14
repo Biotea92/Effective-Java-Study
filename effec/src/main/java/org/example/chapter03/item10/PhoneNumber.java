@@ -16,7 +16,8 @@ public final class PhoneNumber {
         return (short) val;
     }
 
-    @Override public boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
         if (o == this)
             return true;
         if (!(o instanceof PhoneNumber))

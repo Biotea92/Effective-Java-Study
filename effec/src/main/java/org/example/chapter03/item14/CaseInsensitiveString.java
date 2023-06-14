@@ -14,16 +14,19 @@ public final class CaseInsensitiveString
     }
 
     // 수정된 equals 메서드 (56쪽)
-    @Override public boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
         return o instanceof CaseInsensitiveString &&
                 ((CaseInsensitiveString) o).s.equalsIgnoreCase(s);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return s.hashCode();
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return s;
     }
 

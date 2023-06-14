@@ -1,4 +1,5 @@
 package org.example.chapter03.item13;
+
 import java.util.Arrays;
 
 // Stack의 복제 가능 버전 (80-81쪽)
@@ -15,7 +16,7 @@ public class Stack implements Cloneable {
         ensureCapacity();
         elements[size++] = e;
     }
-    
+
     public Object pop() {
         if (size == 0)
             throw new EmptyStackException();
@@ -25,11 +26,12 @@ public class Stack implements Cloneable {
     }
 
     public boolean isEmpty() {
-        return size ==0;
+        return size == 0;
     }
 
     // 코드 13-2 가변 상태를 참조하는 클래스용 clone 메서드
-    @Override public Stack clone() {
+    @Override
+    public Stack clone() {
         try {
             Stack result = (Stack) super.clone();
             result.elements = elements.clone();
@@ -44,7 +46,7 @@ public class Stack implements Cloneable {
         if (elements.length == size)
             elements = Arrays.copyOf(elements, 2 * size + 1);
     }
-    
+
     // clone이 동작하는 모습을 보려면 명령줄 인수를 몇 개 덧붙여서 호출해야 한다.
     public static void main(String[] args) {
         Stack stack = new Stack();

@@ -18,7 +18,8 @@ public class Point {
     }
 
 //    // 잘못된 코드 - 리스코프 치환 원칙 위배! (59쪽)
-//    @Override public boolean equals(Object o) {
+//    @Override
+//    public boolean equals(Object o) {
 //        if (o == null || o.getClass() != getClass())
 //            return false;
 //        Point p = (Point) o;
@@ -26,7 +27,8 @@ public class Point {
 //    }
 
     // 아이템 11 참조
-    @Override public int hashCode()  {
+    @Override
+    public int hashCode()  {
         return 31 * x + y;
     }
 }
