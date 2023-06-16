@@ -53,7 +53,7 @@ _**쉽게 말하자면 객체가 같은지 비교하고자 할때 사용하는 �
 
 <br>
 
-### ⭐️ equals의 재정의 규약 
+### 📌 equals의 재정의 규약 
 
 1. **반사성 (reflexivity)** : null이 아닌 모든 참조 값 x에 대해 x.equals(x) 는 true이다.
 2. **대칭성 (symmetry)** : null이 아닌 모든 참조 값 x, y에 대해 x.equals(y)가 true이면 y.equals(x)도 true이다.
@@ -224,7 +224,7 @@ public boolean equals(Object o) {
 }
 ```
 
-### ⭐️ 양질의 equals 메서드 구현 방법
+### 📌 양질의 equals 메서드 구현 방법
 1. == 연산자를 사용해 입력이 자기 자신의 참조인지 확인한다. (성능 최적화 용도)
 2. instanceof 연산자로 입력이 올바른 타입인지 확인한다. 그렇지 않다면 false를 반환한다.
 3. 입력을 올바른 타입으로 형변환 한다. 
@@ -234,10 +234,98 @@ public boolean equals(Object o) {
 
 equals를 구현했다면 세 가지 질문을 던지자. 대칭적인가? 추이성이 있는가? 일관적인가? 
 
-### 주의사항
+### 📌 주의사항
 - equals를 재정의 할 때는 hashcode도 반드시 재정의하자.
 - 너무 복잡하게 해결하려고 하지 말자. 필드들의 동치성만 검사해도 equals 규약을 어렵지 않게 지킬 수 있다.
 - Object 외의 타입을 매개변수로 받는 equals메서드를 정의하지 말자. 해당 메서드는 Object.equals를 오버라이드 한 게 아니라 오버로딩 한 것에 불과하다.
 
 ### 개인적 생각
 - 직접 구현하는 것보다 IDE나 Lombok의 도움을 받으면 쉽고 정확히 구현가능하다.
+
+<br>
+
+## **⭐️ 아이템 11 : equals를 재정의하려거든 hashCode도 재정의하라**
+
+**oracle 문서에서 ```hashCode()``` 정의 : Returns a hash code value for the object. This method is supported for the benefit of hash tables such as those provided by HashMap.**    
+- 개체의 해시 코드 값을 반환합니다. 이 방법은 HashMap에서 제공하는 것과 같은 해시 테이블의 이점을 위해 지원됩니다.
+- 반환 되는 값은 integers로 개별 개체에 대해 개별 정수를 반환한다.
+
+### 🤔 왜 hashCode를 재정의해야 하는 것인가.
+
+- equals 비교에 사용되는 정보가 변경되지 않았다면, 그 객체의 hashCode 메서드는 몇 번을 호출해도 일관되게 항상 같은 값을 반환해야한다. 애플리케이션을 다시 실행하면 값이 달라져도 상관없다. 
+- equals가 두 객체를 같다고 판단했다면, 두 객체의 hashCode는 똑같은 값을 반환해야 한다.
+- equals가 두 객체를 다르다고 판단했더라도, 두 객체의 hashCode가 서로 다른 값을 반환할 필요는 없다. 단, 다른 객체에 대해서는 다른 값을 반환해야 해시 테이블의 성능이 좋아진다. 
+
+먼저 HashMap의 get(Object key) 메서드를 보면
+```java
+public V get(Object key) {
+    Node<K,V> e;
+    return (e = getNode(hash(key), key)) == null ? null : e.value;
+}
+
+final Node<K,V> getNode(int hash, Object key) {
+    Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (first = tab[(n - 1) & hash]) != null) {
+        if (first.hash == hash && // always check first node
+            ((k = first.key) == key || (key != null && key.equals(k))))
+            return first;
+        if ((e = first.next) != null) {
+            if (first instanceof TreeNode)
+                return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+            do {
+                if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+    }
+    return null;
+}
+
+static final int hash(Object key) {
+    int h;
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+```
+> get(Object key) 설명 : 지정된 키가 매핑된 값을 반환하거나, 이 맵에 키에 대한 매핑이 포함되어 있지 않으면 null을 반환합니다. 보다 공식적으로 이 맵에 (key==null ? k==null : key.equals(k))와 같은 키 k에서 값 v로의 매핑이 포함되어 있으면 이 메서드는 v를 반환합니다. 그렇지 않으면 null을 반환합니다. (이러한 매핑은 최대 하나일 수 있습니다.) null 반환 값이 반드시 맵에 키에 대한 매핑이 포함되어 있지 않음을 나타내는 것은 아닙니다. 맵이 키를 null에 명시적으로 매핑할 수도 있습니다. containsKey 작업을 사용하여 이 두 가지 경우를 구분할 수 있습니다.  
+
+객체의 hash값으로 value를 찾는 것을 볼 수 있다.  
+따라서 hashCode를 재정의 하지 않게 되면 
+```java
+public static void main(String[] args) {
+    Map<PhoneNumber, String> m = new HashMap<>();
+    m.put(new PhoneNumber(707, 867, 5309), "제니");
+    System.out.println(m.get(new PhoneNumber(707, 867, 5309)));
+}
+```
+출력문이 기대하는 제니가 아니라 null이 반환 된다.  
+이는 hashCode 메서드만 재정의 해주면 해결 된다.
+
+<br>
+
+### 📌 올바른 hashCode 구현방법
+
+좋은 해시 함수는 서로 다른 인스턴스에 다른 해시코드를 반환한다. 
+
+```java
+@Override 
+public int hashCode() {
+    int result = Short.hashCode(areaCode);
+    result = 31 * result + Short.hashCode(prefix);
+    result = 31 * result + Short.hashCode(lineNum);
+    return result;
+}
+```
+전형적인 hashCode의 메서드이다.
+
+```java
+@Override public int hashCode() {
+    return Objects.hash(lineNum, prefix, areaCode);
+}
+```
+이 방법은 간단하지만 내부를 들여다 보면 속도가 더 느리다.
+
+- 책에서는 해시의 키로 자주 사용되는 경우는 캐싱하는 방법을 고려하라고 한다.  
+- 해시의 키로 사용되지 않을것 같은 경우 지연 초기화 전략을 권장한다.
+- 성능을 높인답시고 해시코드를 계산할 때 핵심 필드를 생략해서는 안된다. 

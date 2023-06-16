@@ -34,12 +34,12 @@ public final class PhoneNumber {
     // hashCode 없이는 제대로 동작하지 않는다. 다음 셋 중 하나를 활성화하자.
 
 //    // 코드 11-2 전형적인 hashCode 메서드 (70쪽)
-//    @Override public int hashCode() {
-//        int result = Short.hashCode(areaCode);
-//        result = 31 * result + Short.hashCode(prefix);
-//        result = 31 * result + Short.hashCode(lineNum);
-//        return result;
-//    }
+    @Override public int hashCode() {
+        int result = Short.hashCode(areaCode);
+        result = 31 * result + Short.hashCode(prefix);
+        result = 31 * result + Short.hashCode(lineNum);
+        return result;
+    }
 
 //    // 코드 11-3 한 줄짜리 hashCode 메서드 - 성능이 살짝 아쉽다. (71쪽)
 //    @Override public int hashCode() {
