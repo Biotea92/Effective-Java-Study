@@ -329,3 +329,97 @@ public int hashCode() {
 - 책에서는 해시의 키로 자주 사용되는 경우는 캐싱하는 방법을 고려하라고 한다.  
 - 해시의 키로 사용되지 않을것 같은 경우 지연 초기화 전략을 권장한다.
 - 성능을 높인답시고 해시코드를 계산할 때 핵심 필드를 생략해서는 안된다. 
+
+<br>
+
+## **⭐️ 아이템 12 : toString을 항상 재정의하라**
+
+**oracle 문서에서 ```toString()``` 정의 : Returns a string representation of the object.**   
+- 개체의 문자열 표현을 반환합니다.
+- ```getClass().getName() + '@' + Integer.toHexString(hashCode())```
+- toString()을 재정의하면 프로그래머가 디버깅하고 읽기 쉽다. 재정의하지 않으면 위의 코드 처럼 반환해 값을 알아차리기 힘들다. 
+
+- 정적 유틸리티 클래스나 Enum Class는 따로 toString을 재정의 할 필요없다. 
+
+<br>
+
+## **⭐️ 아이템 13 : clone 재정의는 주의해서 진행하라**
+
+**oracle 문서에서 ```clone()``` 정의**
+- 이 객체의 복사본을 생성해 반환한다. 복사의 정확한 뜻은 그 객체를 구현한 클래스에 따라 다를 수 있다. 
+```java
+x.clone() != x // true
+```
+```java
+x.clone().getClass() != x.getClass() // true
+```
+```java
+x.clone().getClass() != x.getClass() 
+// 보통 참이지만 필 수는 아니다.
+```
+- 관례상, 이 메서드가 반환하는 객체는 super.clone을 호출해 얻어야 한다. 이 객체의 모든 상위 클래스가 이 관례를 따른다면 다음의 식은 참이다.
+```java
+x.clone().getClass() == x.getClass()
+```
+- 관례상, 반환된 객체와 원본 객체는 독립적이어야 한다. 이를 만족하려면 super.clone으로 얻은 객체의 필드 중 하나 이상을 반환 전에 수정해야 할 수도 있다.
+
+
+### Cloneable
+```java
+public interface Cloneable {
+}
+```
+Cloneable은 아무 메서드도 없는 메서드이다. 
+
+clone 메서드를 사용하려면 Cloneable 인터페이스를 구현해 주어야 한다.  
+하지만, 예상과 다르게 Object에 메서드가 선언되어있고 그마저도 protected이다. 
+
+### clone메서드를 제대로 사용하기
+
+clone 메서드를 제대로 사용하려면 일단 Cloneable을 상속하고
+```java
+@Override
+public PhoneNumber clone() { // 접근제어자를 public으로 제공
+    try {
+        return (PhoneNumber) super.clone(); // Object의 clone() 메서드 호출
+    } catch (CloneNotSupportedException e) {
+        throw new AssertionError();  // 일어날 수 없는 일이다.
+    }
+}
+```
+하지만 구현이 가변 객체를 참조하는 순간 재앙이 발생한다. 
+```java
+public class Stack implements Cloneable {
+    private Object[] elements;
+    private int size = 0;
+    private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    public Stack() {
+        this.elements = new Object[DEFAULT_INITIAL_CAPACITY];
+    }
+
+    @Override
+    public Stack clone() {
+        try {
+            Stack result = (Stack) super.clone();
+            result.elements = elements.clone();
+            return result;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
+}
+````
+
+만약 위 처럼 clone() 메서드를 재정의하는게 아니라 단순히 super.clone()으로 객체를 반환하게 되면 elements의 배열은 같은 배열을 참조하기 때문에 두 객체중 하나를 수정하면 다른 하나도 수정될 것이다.  
+따라서 위 clone() 메서드와 같이 사용하면 재귀적으로 호출되어 문제를 해결할 수 있다.  
+하지만 elements가 final로 선언되어 있으면 이 방법도 통하지 않는다.  
+또한 LinkedList를 이용한 방법도 있지만 완벽하지 않다. 
+
+책에서는 결국 복사  팩터리나 복사 생성자를 이용하라고 말하고 있다.  
+
+### 결론
+
+배열만 clone 메서드를 이용해서 복사하고, 나머지는 팩터리나 생성자를 이용하자. 
+
+<br>
