@@ -57,11 +57,11 @@ git checkout -b {your-name}
 
 | 발표 주제       | 발표자                     |
 |----------------|----------------------------|
-| 아이템 10 : equals는 일반 규약을 지켜 재정의하라 |  |
-| 아이템 11 : equals를 재정의하려거든 hashCode도 재정의하라 |  |
-| 아이템 12 : toString을 항상 재정의하라 |  |
-| 아이템 13 : clone 재정의는 주의해서 진행하라 |  |
-| 아이템 14 : Comparable을 구현할지 고려하라 |  |
+| 아이템 10 : equals는 일반 규약을 지켜 재정의하라 | ju |
+| 아이템 11 : equals를 재정의하려거든 hashCode도 재정의하라 | yong |
+| 아이템 12 : toString을 항상 재정의하라 | jong |
+| 아이템 13 : clone 재정의는 주의해서 진행하라 | ju |
+| 아이템 14 : Comparable을 구현할지 고려하라 | yong |
 
 </div>
 </details>
