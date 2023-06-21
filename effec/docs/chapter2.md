@@ -1,5 +1,14 @@
 # 🎁 **객체의 생성과 파괴**
-[예제 코드 링크](https://github.com/WegraLee/effective-java-3e-source-code)
+[예제 코드 링크](https://github.com/WegraLee/effective-java-3e-source-code)  
+[아이템1-생성자 대신 정적 팩터리 메서드를 고려하라](#⭐️-아이템-1--생성자-대신-정적-팩터리-메서드를-고려하라)  
+[아이템2-생성자에 매개변수가 많다면 빌더를 고려하라](#⭐️-아이템-2--생성자에-매개변수가-많다면-빌더를-고려하라)  
+[아이템3-private 생성자나 열거 타입으로 싱글턴임을 보장하라](#⭐️-아이템-3--private-생성자나-열거-타입으로-싱글턴임을-보장하라)  
+[아이템4-인스턴스화를 막으려거든 private 생성자를 사용하라](#⭐️-아이템-4--인스턴스화를-막으려거든-private-생성자를-사용하라)  
+[아이템5-자원을 직접 명시하지 말고 의존 객체 주입을 사용하라](#⭐️-아이템-5--자원을-직접-명시하지-말고-의존-객체-주입을-사용하라)  
+[아이템6-불필요한 객체 생성을 피하라](#⭐️-아이템-6--불필요한-객체-생성을-피하라)  
+[아이템7-다 쓴 객체 참조를 해제하라](#⭐️-아이템-7--다-쓴-객체-참조를-해제하라)  
+[아이템8-finalizer와 cleaner 사용을 피하라](#⭐️-아이템-8--finalizer와-cleaner-사용을-피하라)  
+[아이템9-try-finally보다는 try-with-resources를 사용하라](#⭐️-아이템-9--try-finally보다는-try-with-resources를-사용하라)  
 
 ## **⭐️ 아이템 1 : 생성자 대신 정적 팩터리 메서드를 고려하라**
 
@@ -134,9 +143,9 @@
 5. 정적 팩터리 메서드를 작성하는 시점에는 반환할 객체의 클래스가 존재하지 않아도 된다. 
     - 이런 유연함은 서비스 제공자 프레임 워크를 만드는 근간이 된다. 대표적으로 ```JDBC```가 있다.
         > ```Connection```이 서비스 인터페이스 역할을,  
-        > ```DriverManager.registerDriver```이 제공자 등록 API 역할을,  
-        > ```DriverManager.getConnection```이 접근 API 역할을,  
-        > ```Driver```가 서비스 제공자 인터페이스 역할을 수행한다.
+         ```DriverManager.registerDriver```이 제공자 등록 API 역할을,  
+         ```DriverManager.getConnection```이 접근 API 역할을,  
+         ```Driver```가 서비스 제공자 인터페이스 역할을 수행한다.
 
 <br>
 
@@ -181,3 +190,530 @@
     ```java
     List<Complaint> litany = Collections.list(legacyLitany);
     ```
+
+<br>
+
+## **⭐️ 아이템 2 : 생성자에 매개변수가 많다면 빌더를 고려하라**
+
+정적 팩터리 메서드와 생성자는 선택적 매개 변수가 많을 수록 생성자를 많이 많들거나 정적 팩터리 메서드를 만들어야한다. 
+
+- ```점층적 생성자 패턴```
+    ```java
+    public class NutritionFacts {
+        private final int servingSize;  // (mL, 1회 제공량)     필수
+        private final int servings;     // (회, 총 n회 제공량)  필수
+        private final int calories;     // (1회 제공량당)       선택
+        private final int fat;          // (g/1회 제공량)       선택
+        private final int sodium;       // (mg/1회 제공량)      선택
+        private final int carbohydrate; // (g/1회 제공량)       선택
+
+        public NutritionFacts(int servingSize, int servings) {
+            this(servingSize, servings, 0);
+        }
+
+        public NutritionFacts(int servingSize, int servings,
+                            int calories) {
+            this(servingSize, servings, calories, 0);
+        }
+
+        public NutritionFacts(int servingSize, int servings,
+                            int calories, int fat) {
+            this(servingSize, servings, calories, fat, 0);
+        }
+
+        public NutritionFacts(int servingSize, int servings,
+                            int calories, int fat, int sodium) {
+            this(servingSize, servings, calories, fat, sodium, 0);
+        }
+        public NutritionFacts(int servingSize, int servings,
+                            int calories, int fat, int sodium, int carbohydrate) {
+            this.servingSize  = servingSize;
+            this.servings     = servings;
+            this.calories     = calories;
+            this.fat          = fat;
+            this.sodium       = sodium;
+            this.carbohydrate = carbohydrate;
+        }
+    }
+    ```
+  물론 요즘은 ide가 생성자를 만들어주지만 보기에 매우 나쁜 냄새가 난다.  
+- ```자바빈즈 패턴```
+    ```java
+    public class NutritionFacts {
+        // 매개변수들은 (기본값이 있다면) 기본값으로 초기화된다.
+        private int servingSize  = -1; // 필수; 기본값 없음
+        private int servings     = -1; // 필수; 기본값 없음
+        private int calories     = 0;
+        private int fat          = 0;
+        private int sodium       = 0;
+        private int carbohydrate = 0;
+
+        public NutritionFacts() { }
+        // Setters
+        public void setServingSize(int val)  { servingSize = val; }
+        public void setServings(int val)     { servings = val; }
+        public void setCalories(int val)     { calories = val; }
+        public void setFat(int val)          { fat = val; }
+        public void setSodium(int val)       { sodium = val; }
+        public void setCarbohydrate(int val) { carbohydrate = val; }
+
+        public static void main(String[] args) {
+            NutritionFacts cocaCola = new NutritionFacts();
+            cocaCola.setServingSize(240);
+            cocaCola.setServings(8);
+            cocaCola.setCalories(100);
+            cocaCola.setSodium(35);
+            cocaCola.setCarbohydrate(27);
+        }
+    }
+    ```
+    밑의 main메서드 처럼 생성자로 객체를 만든 후 setter를 통해 매개변수를 설정한다.  
+    하지만 객체를 만들고 많은 set메서드를 호출해야하는 단점이 생기고, 객체가 완전히 생성되기 직전까지 일관성이 무너진 상태에 놓인다.  
+    이런 문제로 ```자바빈즈 패턴에서는 클래스를 불변으로 만들 수 없고``` 스레드의 안정성을 위해 프로그래머가 추가 작업을 해줘야만 한다. 
+    - 빌더 패턴
+    ```java
+    public class NutritionFacts {
+        private final int servingSize;
+        private final int servings;
+        private final int calories;
+        private final int fat;
+        private final int sodium;
+        private final int carbohydrate;
+
+        public static class Builder {
+            // 필수 매개변수
+            private final int servingSize;
+            private final int servings;
+
+            // 선택 매개변수 - 기본값으로 초기화한다.
+            private int calories      = 0;
+            private int fat           = 0;
+            private int sodium        = 0;
+            private int carbohydrate  = 0;
+
+            public Builder(int servingSize, int servings) {
+                this.servingSize = servingSize;
+                this.servings    = servings;
+            }
+
+            public Builder calories(int val)
+            { calories = val;      return this; }
+            public Builder fat(int val)
+            { fat = val;           return this; }
+            public Builder sodium(int val)
+            { sodium = val;        return this; }
+            public Builder carbohydrate(int val)
+            { carbohydrate = val;  return this; }
+
+            public NutritionFacts build() {
+                return new NutritionFacts(this);
+            }
+        }
+
+        private NutritionFacts(Builder builder) {
+            servingSize  = builder.servingSize;
+            servings     = builder.servings;
+            calories     = builder.calories;
+            fat          = builder.fat;
+            sodium       = builder.sodium;
+            carbohydrate = builder.carbohydrate;
+        }
+
+        public static void main(String[] args) {
+            NutritionFacts cocaCola = new Builder(240, 8)
+                    .calories(100)
+                    .sodium(35)
+                    .carbohydrate(27)
+                    .build();
+        }
+    }
+    ```
+    빌더 패턴은 쓰기 쉽고 읽기도 쉽다. 심지어 Lombok을 쓰게 되면 쉽게 만들 수 있다.
+    - ```Lombok을 통한 빌더 패턴``` 
+    ```java
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Builder(builderMethodName = "")
+    public class NutritionFacts {
+
+        private int servingSize; // required
+        private int servings; // required
+        private int calories; // optional
+        private int fat; // optional
+        private int sodium; // optional
+        private int carbohydrate; // optional
+
+        public static NutritionFactsBuilder builder(int servingSize, int servings) {
+            return new NutritionFactsBuilder().servingSize(servingSize).servings(servings);
+        }
+
+        public static void main(String[] args) {
+            NutritionFacts nutritionFacts = NutritionFacts.builder(240, 8)
+                    .calories(100)
+                    .fat(0)
+                    .sodium(35)
+                    .carbohydrate(27)
+                    .build();
+        }
+    }
+    ```
+    여기서 ```@AllArgsConstructor(access = AccessLevel.PRIVATE)```는 생성자를 통한 객체생성을 막기위해 설정해두었고 ```builderMethodName = ""```와 ```builder```메서드 재정의는 required값을 설정해주고 필요없는 메서드를 통한 객체생성을 막기 위해 설정해 주었다.  
+
+<br>
+빌더 패턴은 계층적으로 설계된 클래스와 함께 쓰기에 좋다.  
+
+<br>
+
+## **⭐️ 아이템 3 : private 생성자나 열거 타입으로 싱글턴임을 보장하라**
+
+싱글턴은 인스턴스를 오직 하나만 생성할 수 있는 클래스이다.
+
+- 주로 사용되는 형태의 정적 팩터리 방식의 싱글턴
+    ```java
+    public class Elvis {
+        private static final Elvis INSTANCE = new Elvis();
+        private Elvis() { }
+        public static Elvis getInstance() { 
+            return INSTANCE; 
+        }
+    }
+    ```
+
+- 책에서 추천하는 열거 타입 방식의 싱글턴 
+    ```java
+    public enum Elvis {
+        INSTANCE;
+
+        public void leaveTheBuilding() {
+            System.out.println("기다려 자기야, 지금 나갈께!");
+        }
+
+        // 이 메서드는 보통 클래스 바깥(다른 클래스)에 작성해야 한다!
+        public static void main(String[] args) {
+            Elvis elvis = Elvis.INSTANCE;
+            elvis.leaveTheBuilding();
+        }
+    }
+    ```
+> 현 주제에서는 싱글턴패턴이 주제가 아니다.  
+> LazyHolder패턴, Double-Checking-Locking 등 다양한 싱글턴을 만드는 방법이 있다.  
+>> [싱글턴의 다양한 구현 방법 블로그글](https://1-7171771.tistory.com/121) 
+
+<br>
+
+## **⭐️ 아이템 4 : 인스턴스화를 막으려거든 private 생성자를 사용하라**
+
+사실 아이템 주제에 모든 내용이 담겨 있다.  
+- 정적 메서드와 정적 필드만을 담은 클래스를 만들고 싶을 때 생성자를 통한 객체 생성을 막기 위해 private 생성자를 이용할 수 있다.
+    > 생성자를 명시하지 않으면 컴파일러가 자동으로 기본생성자를 만든다.
+- 테스트 해보기 위한 예시 코드
+    ```java
+    public class UtilityClass {
+        // 기본 생성자가 만들어지는 것을 막는다(인스턴스화 방지용).
+        private UtilityClass() {
+            throw new AssertionError();
+        }
+
+        public String hello() {
+            return "hello";
+        }
+        // 나머지 코드는 생략
+    }
+    ```
+    ```java
+    class UtilityClassTest {
+
+    @Test
+    void test() {
+    //        UtilityClass utilityClass = new UtilityClass();
+    //        Assertions.assertEquals("hello", utilityClass.hello());
+        }
+    }
+    ```
+    ```UtilityClass```의 생성자를 주석처리하면 테스트케이스의 컴파일을 진행할 수 있다.
+
+<br>
+
+## **⭐️ 아이템 5 : 자원을 직접 명시하지 말고 의존 객체 주입을 사용하라**
+
+만약 ```SpellChecker```객체와 ```Dictionary```객체가 존재할때 SpellChecker는 Dictionary를 참조 해야 하는 상황이라고 가정해보겠다. 
+
+```java
+public interface Dictionary {
+
+    boolean contains(String word);
+
+    List<String> closeWordsTo(String typo);
+}
+```
+Dictionary는 여러 종류가 존재한다.  
+```java
+public class SpellChecker {
+
+    private static final Dictionary dictionary = new DefaultDictionary();
+
+    private SpellChecker() {}
+
+    public static boolean isValid(String word) {
+        return dictionary.contains(word);
+    }
+
+    public static List<String> suggestions(String typo) {
+        return dictionary.closeWordsTo(typo);
+    }
+}
+```
+```java
+public class SpellChecker {
+
+    private final Dictionary dictionary = new DefaultDictionary();
+
+    private SpellChecker() {}
+
+    public static final SpellChecker INSTANCE = new SpellChecker();
+
+    public boolean isValid(String word) {
+        return dictionary.contains(word);
+    }
+
+    public List<String> suggestions(String typo) {
+        return dictionary.closeWordsTo(typo);
+    }
+}
+```
+위 처럼 정적 유틸리티나 싱글턴으로 SpellChecker를 만들게 되면 한 종류의 Dictionary만 존재할 때면 괜찮을지 몰라도 여러 종류의 Dictionary가 존재하면 SpellChecker가 유연하게 Dictionary를 참조하지 못하게 된다.  
+테스트 또한 용이하게 하지 못하게 된다. 
+
+<br>
+
+_**이를 극복하기 위해 인스턴스를 생성할 때 생성자에 필요한 자원을 넘겨주는 의존 객체 주입의 한 형태를 이용한다.**_
+
+```java
+public class SpellChecker {
+
+    private final Dictionary dictionary;
+
+    public SpellChecker(Dictionary dictionary) {
+        this.dictionary = dictionary;
+    }
+
+    public static void main(String[] args) {
+        SpellChecker spellChecker = new SpellChecker(new DefaultDictionary());
+    }
+}
+```
+또한 생성자에 자원 팩터리를 넘겨주는 방식을 이용할 수도 있다.  
+```Supplier<T>```인터페이스는 팩터리를 표현한 완벽한 예이다. 
+```java
+public class SpellChecker {
+
+    private final Dictionary dictionary;
+
+    public SpellChecker(Supplier<Dictionary> dictionarySupplier) {
+        this.dictionary = dictionarySupplier.get();
+    }
+
+    public static void main(String[] args) {
+        SpellChecker spellChecker = new SpellChecker(DefaultDictionary::new);
+    }
+}
+```
+의존 객체 주입이 유연성과 테스트 용이성을 개선해주기는 하지만 의존성이 많아질 수록 어지러운 코드가 될 수도 있다.  
+스프링에서는 이를 극복하기 위해 DI, IOC 기술을 통해 의존성 객체 주입을 효율적으로 이용할 수 있다.  
+
+<br>
+
+## **⭐️ 아이템 6 : 불필요한 객체 생성을 피하라**
+
+똑같은 기능의 객체를 매번 생성하기 보다는 객체 하나를 재사용하는 편이 나을 때가 많다.
+```java
+String s1 = "name";
+String s2 = new String("name"); // 따라 하지 말 것
+```
+아래의 s2는 실행될 때마다 String 인스턴스를 새로만든다.  
+반면 s1은 이와 똑같은 문자열 리터럴을 사용하는 모든 코드가 같은 객체를 재사용함이 보장된다.
+
+```java
+public class RomanNumerals {
+    // 코드 6-1 성능을 훨씬 더 끌어올릴 수 있다!
+    static boolean isRomanNumeralSlow(String s) {
+        return s.matches("^(?=.)M*(C[MD]|D?C{0,3})"
+                + "(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
+    }
+
+    // 코드 6-2 값비싼 객체를 재사용해 성능을 개선한다.
+    private static final Pattern ROMAN = Pattern.compile(
+            "^(?=.)M*(C[MD]|D?C{0,3})"
+                    + "(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
+
+    static boolean isRomanNumeralFast(String s) {
+        return ROMAN.matcher(s).matches();
+    }
+}
+```
+위의코드에서 ```isRomanNumeralSlow```메서드에 포함된 ```String.matches```는 정규표현식으로 문자열 형태를 확인하는 가장 쉬운 방법이지만, 성능이 중요한 상황에서 반복해 사용하기엔 적합하지 않다.  그 이유는 메서드에서 찾을 수 있다.
+```java
+public boolean matches(String regex) {
+    return Pattern.matches(regex, this);
+}
+```
+메서드 내에서 ```Pattern``` 인스턴스를 생성하기 때문이다. 반복문을 돌게되면 ```Pattern``` 인스턴스는 한 번 쓰고 버려지고를 반복한다.  
+따라서 ```Pattern``` 인스턴스를 캐싱해서 재사용하면 성능을 개선할 수 있다. 
+```java
+private static final Pattern ROMAN = {...}
+```
+
+```또한 오토박싱을 박싱된 Type을 사용할 때 조심해야한다.```
+의미상 별다를 바 없게 느껴지지만 성능상에는 그렇지 않다. 
+```java
+private static long sum() {
+    Long sum = 0L;
+    for (long i = 0; i <= Integer.MAX_VALUE; i++)
+        sum += i;
+    return sum;
+}
+```
+위 메서드를 보면 + 연산될 때마다 Long 객체를 생성한다. 매우 비효율적이다.  
+```박싱된 기본 타입보다는 기본타입을 사용하고, 의도치 않은 오토박싱이 숨어들지 않도록 주의하자.```
+
+<br>
+
+## **⭐️ 아이템 7 : 다 쓴 객체 참조를 해제하라**
+
+```java
+public class Stack {
+    private Object[] elements;
+    private int size = 0;
+    private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    public Stack() {
+        elements = new Object[DEFAULT_INITIAL_CAPACITY];
+    }
+
+    public void push(Object e) {
+        ensureCapacity();
+        elements[size++] = e;
+    }
+
+   public Object pop() {
+       if (size == 0)
+           throw new EmptyStackException();
+       return elements[--size];
+   }
+
+    /**
+     * 원소를 위한 공간을 적어도 하나 이상 확보한다.
+     * 배열 크기를 늘려야 할 때마다 대략 두 배씩 늘린다.
+     */
+    private void ensureCapacity() {
+        if (elements.length == size)
+            elements = Arrays.copyOf(elements, 2 * size + 1);
+    }
+
+    // 코드 7-2 제대로 구현한 pop 메서드 (37쪽)
+    // public Object pop() {
+    //     if (size == 0)
+    //         throw new EmptyStackException();
+    //     Object result = elements[--size];
+    //     elements[size] = null; // 다 쓴 참조 해제
+    //     return result;
+    // }
+
+    public static void main(String[] args) {
+        Stack stack = new Stack();
+        for (String arg : args)
+            stack.push(arg);
+
+        while (true)
+            System.err.println(stack.pop());
+    }
+}
+```
+
+```pop``` 메서드는 현재 객체를 반환한 뒤 Stack에 다 쓴 객체를 참조하고 있다.  
+gc를 가지는 언어에는 객체 참조 하나를 살려두면 그 객체 뿐만 아니라(그 객체들이 참조하는 모든 객체)를 회수하지 못한다.  
+이 해법은 주석처리된 ```pop``` 메서드 처럼 다 쓴 객체를 null처리하면 된다.
+
+### _**캐시 역시 메모리 누수를 일으키는 주범이다.**_
+- ```HashMap```의 경우는 ```WeakHashMap``` 사용을 고려해 캐시를 만들자 다 쓴 엔트리는 그 즉시 자동으로 제거될 것이다.
+- 더 복잡한 캐시를 만들고 싶다면 ```java.lang.ref``` 패키지를 직접 활용하자 
+- 리스너 혹은 콜백을 등록만하고 명확히 해지하지 않는다면 메모리 누수의 원인이 된다.
+    - 콜백을 약한 참조(weak reference)로 저장하면 가비지 컬렉터가 즉시 수거간다. ex) ```WeakHashMap```
+
+
+## **⭐️ 아이템 8 : finalizer와 cleaner 사용을 피하라**
+
+_**자바는 finalizer와 cleaner라는 객체 소멸자를 제공한다.**_
+
+- finalizer : 예측할 수 없고, 상황에 따라 위험할 수 있어 일반적으로 불필요하다.
+- cleaner : finalizer보다는 덜 위험하지만, 여전히 예측할 수 없고, 느리고, 일반적으로 불필요하다. 
+
+두 소멸자 모두 즉시 수행된다는 보장이 없다. ```즉, 제때 실행되어야 하는 작업은 절대 할 수 없다.```  
+
+이팩티브 자바 책에서는 이후로 약 한장 반이 넘게 두 메서드의 욕을 정성스럽게 써놓았다. 그리고 대신해줄 묘안으로 ```AutoCloseable을 구현```하라고 제시한다.
+
+### cleaner와 finalizer는 어디에 쓰는 물건인가?
+
+1. 자원의 소유자가 close 메서드를 호출하지 않는 것에 대비한 안전망 역할이다. 
+    - 자원 회수를 늦게 해주는 것보다 아예 안하는 것보다 낫다. 
+        > ex ) FileInputStream, FileOutputStream, ThreadPoolExcutor
+2. 네이티브 피어와 연결된 객체에서 사용한다.
+    - 네이티브 피어는 자바 객체가 아니니 gc가 그 존재를 알지 못한다. 따라서 cleaner와 finalizer를 쓰기에 적당하지만 즉시, 자원을 회수하고 싶다면 close메서드를 사용하자
+
+finalizer는 override하여 사용하면 되지만 cleaner는 AutoCloseable을 직접 구현해서 사용하면된다. 
+
+```java
+public class Room implements AutoCloseable {
+    private static final Cleaner cleaner = Cleaner.create();
+
+    // 청소가 필요한 자원. 절대 Room을 참조해서는 안 된다!
+    private static class State implements Runnable {
+        int numJunkPiles; // Number of junk piles in this room
+
+        State(int numJunkPiles) {
+            this.numJunkPiles = numJunkPiles;
+        }
+
+        // close 메서드나 cleaner가 호출한다.
+        @Override public void run() {
+            System.out.println("Cleaning room");
+            numJunkPiles = 0;
+        }
+    }
+
+    // 방의 상태. cleanable과 공유한다.
+    private final State state;
+
+    // cleanable 객체. 수거 대상이 되면 방을 청소한다.
+    private final Cleaner.Cleanable cleanable;
+
+    public Room(int numJunkPiles) {
+        state = new State(numJunkPiles);
+        cleanable = cleaner.register(this, state);
+    }
+
+    @Override public void close() {
+        cleanable.clean();
+    }
+}
+```
+close메서드에서 Cleanerable의 clean을 호출하면 run을 호출한다.  
+또한 gc가 Room객체를 회수할때까지 close를 호출하지 않는다면 cleaner가 State의 run 메서드를 호출해줄 것을 바라고 안전망 역할을 해준다. 
+
+하지만 자동 청소는 try-with-resources블록으로 감싸면 필요하지 않다.
+```java
+public class Adult {
+    public static void main(String[] args) {
+        try (Room myRoom = new Room(7)) {
+            System.out.println("안녕~");
+        }
+    }
+}
+```
+
+_**cleaner는 안전망 역할이나 중요하지 않은 네이티브 자원 회수용으로만 사용하자. 성능은 절대 보장하지 못한다.**_
+
+
+## **⭐️ 아이템 9 : try-finally보다는 try-with-resources를 사용하라**
+
+꼭 회수해야 하는 자원은 예외 없이 ```try-finally``` 말고 ```try-resources```를 사용하자.  
+코드는 더 짧고 분명해지고, 만들어지는 예외 정보도 유용하다. 
