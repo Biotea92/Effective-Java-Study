@@ -5,4 +5,18 @@ class Square extends Rectangle {
     Square(double side) {
         super(side, side);
     }
+
+    @Override double area() {
+        return length * length;
+    }
+
+    // 둘레를 구하는 메서드
+    double perimeter() {
+        return 4 * length;
+    }
+
+    // 이 메서드는 사각형이 아닌 정사각형을 반환한다!
+    static Square newSquare(double side) {
+        return new Square(side);
+    }
 }
