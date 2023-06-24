@@ -65,7 +65,7 @@ package-private class나 private 중첩 class라면 필드를 노출해야 할 �
 2. 클래스를 확장할 수 없도록 한다.
 3. 모든 필드를 final로 선언한다.
 4. 모든 필드를 private으로 선언한다.
-5. 자신 외에는 내부의 가변 컴포넌트에 접글할 수 없도록 한다. 
+5. 자신 외에는 내부의 가변 컴포넌트에 접근할 수 없도록 한다. 
 
 ### _불변 객체의 특징_
 - 단순하다. 
@@ -128,6 +128,56 @@ package-private class나 private 중첩 class라면 필드를 노출해야 할 �
 java에서 제공되는 다중 구현 메커니즘에는 abstract class와 interface가 있다.  
 자바8 이후로 인터페이스도 디폴트 메서드를 제공하여 abstract class와 interface 모두 메서드를 구현 형태로 제공할 수 있다.  
 큰 차이는 단일 상속 여부 차이이다. 
+- 추상클래스 예시 
+  ```java
+  public abstract class Example {
+
+    public void print() {
+        System.out.println("test");
+    }
+
+    public abstract void printName();
+
+    public void decoratePrintName() {
+        System.out.println("**");
+        printName();
+        System.out.println("**");
+    }
+
+    public static void main(String[] args) {
+        Example example = new Example() {
+            @Override
+            public void printName() {
+                System.out.println("test");
+            }
+        };
+        example.decoratePrintName();
+    }
+  }
+  ```
+- 인터페이스 예시
+  ```java
+  public interface ExampleInterface {
+
+    void printName();
+
+    default void decoratePrintName() {
+        System.out.println("**");
+        printName();
+        System.out.println("**");
+    }
+
+    public static void main(String[] args) {
+        ExampleInterface example = new ExampleInterface() {
+            @Override
+            public void printName() {
+                System.out.println("test");
+            }
+        };
+        example.decoratePrintName();
+    }
+  }
+  ```
 
 ### _인터페이스의 장점_
 - 인터페이스는 믹스인 정의에 안성맞춤이다.
