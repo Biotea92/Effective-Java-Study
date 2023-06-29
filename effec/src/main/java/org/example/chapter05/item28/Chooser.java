@@ -20,6 +20,13 @@ public class Chooser<T> {
     }
 
     public static void main(String[] args) {
+//        Object[] objectArray = new Long[1];
+//        objectArray[0] = "타입이 달라 넣을 수 없다."; // ArrayStoreException 예외 발생
+//
+//        List<Object> ol = new ArrayList<Long>();
+//        ol.add("타입이 달라 넣을 수 없다."); // 컴파일 오류 발생
+
+
         List<Integer> intList = List.of(1, 2, 3, 4, 5, 6);
 
         Chooser<Integer> chooser = new Chooser<>(intList);
