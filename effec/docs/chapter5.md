@@ -25,6 +25,13 @@ List 인터페이스는 원소의 타입을 나타내는 타입 매개변수 ```
     - V : 값
     - S,U,V : 두번 째, 세 번째, 네 번째에 선언된 타입
 
+- **Type Erasure** - [오라클 문서](https://docs.oracle.com/javase/tutorial/java/generics/erasure.html) 내용 참조  
+Generics were introduced to the Java language to provide tighter type checks at compile time and to support generic programming. To implement generics, the Java compiler applies type erasure to:
+    - Replace all type parameters in generic types with their bounds or Object if the type parameters are unbounded. The produced bytecode, therefore, contains only ordinary classes, interfaces, and methods.
+    - Insert type casts if necessary to preserve type safety.
+    - Generate bridge methods to preserve polymorphism in extended generic types.
+    - 내가 이해한 내용 : 기존의 타입을 버린다. unbounded type이면 버리고 Object로 bouned type이면 bound type으로 캐스팅 한다.
+
 <br>
 
 ## **⭐️ 아이템 26 : 로 타입은 사용하지 말라**
@@ -133,7 +140,7 @@ Set<Lark> exaltation = new HashSet<>();
 ## **⭐️ 아이템 28 : 배열보다는 리스트를 사용하라**
 배열과 제네릭 타입에서는 중요한 차이가 두 가지 있다.  
 
-### ***차이 1*** 
+### 📌 ***차이 1*** 
 배열은 공변이다.  
 제네릭은 불공변이다.  
 다음 코드를 보면 공변과 불공변의 차이를 쉽게 이해할 수 있다.  
@@ -149,22 +156,210 @@ ol.add("타입이 달라 넣을 수 없다."); // 컴파일 오류 발생
 배열은 하위 타입을 상위 타입 배열에 넣을 수 있지만, 제네릭은 불가능하다.  
 두 코드 모두 Long용 저장소에 String을 넣을 수 없지만 에러를 알아 내는 시점이 다르기 때문에 리스트가 더 좋다.
 
-### ***차이 2***
-배열은 실체화된다. -> 배열은 런타임 시에도 자신이 담기로 한 언소 타입을 인지하고 확인하여 예외를 던진다.  
+### 📌 ***차이 2***
+배열은 실체화된다. -> 배열은 런타임 시에도 자신이 담기로 한 원소 타입을 인지하고 확인하여 예외를 던진다.  
 제네릭은 타입 정보가 런타임에는 소거(Erasure)된다.  
 
-### ***제네릭 배열 생성 오류***
+### 📌 ***제네릭 배열 생성 오류***
 제네릭과 배열은 같이 어우러지지 못한다. 배열은 제네릭 타입, 매개변수화 타입, 타입 매개변수로 사용할 수 없다. ```new List<E>[]```, ```new List<String>[]```, ```new E[]```식으로 작성하면 컴파일할 때 제네릭 배열 생성 오류를 일으킨다.  
 
 
+```E. List<E>, List<String>``` 같은 타입은 실체화 불가 타입(non-reifiable-type)이다. 
+따라서 실체화되지 않기 때문에 런타임에는 컴파일타임보다 타입 정보를 적게 가지는 타입이다.  
+소거 메커니즘으로 실체화될 수 있는 타입은 ```List<?>, Map<?,?>``` 같은 비한정적 와일드카드 타입뿐이다.
+
+### 📌 ***제네릭 타입과 가변인수***
+제네릭 타입과 가변인수를 함께 쓰면 어려운 경고 메시지를 받게 된다.  
+그 이유는 가변인수 메서드느 ㄴ호출 될 때 가변인수 매개변수를 담을 배열이 하나 만들어지기 때문에 배열의 원소가 실체화 불가 타입이라면 경고가 발생한다.  
+이 문제는 ```@SafeVarargs``` 어노테이션으로 해결할 수 있다
+
+
+### 📌 결론
+배열은 공변이고 실체화된다. 제네릭은 불공변이고 타입 정보가 소거된다.  
+배열은 런타임에는 타입 안전, 컴파일 타임에는 불안전하고,  
+제네릭은 런타임에는 불안전, 컴파일 타임에는 안전하다.  
+따라서 둘을 혼합해서 사용하면 좋지 않다. 혹시라도 혼합해서 사용한다면 배열을 리스트로 대체하는 것을 고려해라.
 
 <br>
 
 ## **⭐️ 아이템 29 : 이왕이면 제네릭 타입으로 만들라**
+제네릭 타입과 메서드를 사용하는 것은 보통은 쉽지만 제네릭 타입 class를 새로 만드는 일은 조금 더 어렵다.
+
+### 📌 ***제네릭 타입 만드는 방법***
+- Object 기반 Stack - 이후 제네릭으로 변경 예정!
+```java
+public class Stack {
+    private Object[] elements;
+    private int size = 0;
+    private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    public Stack() {
+        elements = new Object[DEFAULT_INITIAL_CAPACITY];
+    }
+
+    public void push(Object e) {
+        ensureCapacity();
+        elements[size++] = e;
+    }
+
+    public Object pop() {
+        if (size == 0)
+            throw new EmptyStackException();
+        Object result = elements[--size];
+        elements[size] = null; // 다 쓴 참조 해제
+        return result;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    private void ensureCapacity() {
+        if (elements.length == size)
+            elements = Arrays.copyOf(elements, 2 * size + 1);
+    }
+}
+```
+- 위 클래스를 제네릭 타입으로 순서대로 변경할 것이다. 
+- 첫 번째 방법 - 클래스 선언 타입 매개변수를 추가한다. 타입 이름은 Element의 약자 E를 사용한다.
+    ```java
+    public class Stack<E> {
+        private E[] elements;
+        private int size = 0;
+        private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+        public Stack() {
+            elements = new E[DEFAULT_INITIAL_CAPACITY];
+        }
+
+        public void push(E e) {
+            ensureCapacity();
+            elements[size++] = e;
+        }
+
+        public E pop() {
+            if (size == 0)
+                throw new EmptyStackException();
+            E result = elements[--size];
+            elements[size] = null; // 다 쓴 참조 해제
+            return result;
+        }
+
+        ... // isEmpty와 ensureCapacity 메서드는 그대로
+    }
+    ```
+    - 이 단계에서 오류나 경고가 발생한다. ```new E``` 부분 
+    ```java
+    elements = (E[]) new Object[DEFAULT_INITIAL_CAPACITY];
+    ```
+    - 위 코드로 바꾸게 되면 컴파일 오류는 발생하지 않지만 이제는 경고를 띄운다.
+    - 컴파일러가 타입이 안전한지 확인할 방법이 없지만 우리가 판단했을 때 이 비검사 형변환은 안전하다고 판단되면 ```@SuppressWarnings```를 달아 경고를 숨기자.
+    ```JAVA
+    @SuppressWarnings("unchecked")
+    public Stack() {
+        elements = (E[]) new Object[DEFAULT_INITIAL_CAPACITY];
+    }
+    ```
+- 두번째 방법 - elements 필드의 타입을 E[]에서 Object[]로 바꾼다.
+    ```java
+    public class Stack<E> {
+        private Object[] elements;
+        private int size = 0;
+        private static final int DEFAULT_INITIAL_CAPACITY = 16;
+        
+        public Stack() {
+            elements = new Object[DEFAULT_INITIAL_CAPACITY];
+        }
+
+        public void push(E e) {
+            ensureCapacity();
+            elements[size++] = e;
+        }
+
+        // 비검사 경고를 적절히 숨긴다.
+        public E pop() {
+            if (size == 0)
+                throw new EmptyStackException();
+
+            // push에서 E 타입만 허용하므로 이 형변환은 안전하다.
+            @SuppressWarnings("unchecked") E result = (E) elements[--size];
+
+            elements[size] = null; // 다 쓴 참조 해제
+            return result;
+        }
+    }
+    ```
+    - E는 실체화 불가 타입이므로 컴파일러는 런타임에 이뤄지는 형변환이 안전한지 증명할 방법이 없다. 
+    - 위와 마찬가지로 안전하다고 증명되면 ```@SuppressWarnings``` 어노테이션으로 필드에서 경고를 숨기자
+- 결국 두 가지 방법 모두 쓰인다. 현업에서는 첫 번째 방법을 선호하고, 힙 오염이 걱정되면 두 번째 방법을 쓰기도 한다. 
+
+### 📌결론
+제네릭 타입은 안전하고 쓰기가 편하지만 만들기는 쉽지않다. 그러므로 쓰기 편할 수 있게 제네릭 타입을 만들어 제공하자. 그렇다면 사용자가 훨씬 편하게 이용할 수 있다.  
+ex ) 사용자가 직접 형변환하지 않아도됨  
 
 <br>
 
 ## **⭐️ 아이템 30 : 이왕이면 제네릭 메서드로 만들라**
+- 메서드를 제네릭 메서드로 만들면 일반 메서드 보다 활용도가 높아진다.
+```java
+public static <E> Set<E> union(Set<E> s1, Set<E> s2) {
+    Set<E> result = new HashSet<>(s1);
+    result.addAll(s2);
+    return result;
+}
+```
+- 단순한 제네릭 메서드라면 이 정도로 충분하지만 때때로 불변 객체를 여러 타입으로 활용할 수 있게 만들어야 할 때도 있다.
+- 제네릭은 런타임에 타입 정보가 소거되므로 하나의 객체를 어떤 타입으로든지 매개변수화 할 수 있다. 
+- 하지만 앞선 방식을 사용하기 위해서는 요청한 타입 매개 변수에 맞게 매번 그 객체의 타입을 바꿔주는 정적 팩터리를 만들어야한다. 이러한 패턴을 ```제네릭 싱글턴 팩터리```라고 한다. ```Collections.reverseOrder```나 ```Collections.emptySet``` 같은 컬렉션용으로 사용한다. 
+```JAVA
+public class Collections {
+
+    // ... 
+    
+    @SuppressWarnings("unchecked")
+    public static <T> Comparator<T> reverseOrder() {
+        return (Comparator<T>) ReverseComparator.REVERSE_ORDER;
+    }
+
+    private static class ReverseComparator
+        implements Comparator<Comparable<Object>>, Serializable {
+        
+        static final ReverseComparator REVERSE_ORDER = new ReverseComparator();
+        // ...
+    }
+
+    // ...
+
+    @SuppressWarnings("unchecked")
+    public static <T> Comparator<T> reverseOrder(Comparator<T> cmp) {
+        if (cmp == null) {
+            return (Comparator<T>) ReverseComparator.REVERSE_ORDER;
+        } else if (cmp == ReverseComparator.REVERSE_ORDER) {
+            return (Comparator<T>) Comparators.NaturalOrderComparator.INSTANCE;
+        } else if (cmp == Comparators.NaturalOrderComparator.INSTANCE) {
+            return (Comparator<T>) ReverseComparator.REVERSE_ORDER;
+        } else if (cmp instanceof ReverseComparator2) {
+            return ((ReverseComparator2<T>) cmp).cmp;
+        } else {
+            return new ReverseComparator2<>(cmp);
+        }
+    }
+
+    // ...
+
+    @SuppressWarnings("rawtypes")
+    public static final Set EMPTY_SET = new EmptySet<>();
+
+    @SuppressWarnings("unchecked")
+    public static final <T> Set<T> emptySet() {
+        return (Set<T>) EMPTY_SET;
+    }
+
+    // ...
+}
+```
+- 
+
 
 <br>
 
