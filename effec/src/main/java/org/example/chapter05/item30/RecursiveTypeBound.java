@@ -1,6 +1,5 @@
 package org.example.chapter05.item30;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +20,7 @@ public class RecursiveTypeBound {
     }
 
     public static void main(String[] args) {
-        List<String> argList = Arrays.asList(args);
+        List<Integer> argList = List.of(1,2,3,4,5,6,7,8,9,10);
         System.out.println(max(argList));
     }
 }

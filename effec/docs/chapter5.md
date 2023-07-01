@@ -170,7 +170,7 @@ ol.add("타입이 달라 넣을 수 없다."); // 컴파일 오류 발생
 
 ### 📌 ***제네릭 타입과 가변인수***
 제네릭 타입과 가변인수를 함께 쓰면 어려운 경고 메시지를 받게 된다.  
-그 이유는 가변인수 메서드느 ㄴ호출 될 때 가변인수 매개변수를 담을 배열이 하나 만들어지기 때문에 배열의 원소가 실체화 불가 타입이라면 경고가 발생한다.  
+그 이유는 가변인수 메서드는 호출 될 때 가변인수 매개변수를 담을 배열이 하나 만들어지기 때문에 배열의 원소가 실체화 불가 타입이라면 경고가 발생한다.  
 이 문제는 ```@SafeVarargs``` 어노테이션으로 해결할 수 있다
 
 
@@ -293,7 +293,7 @@ public class Stack {
     - 위와 마찬가지로 안전하다고 증명되면 ```@SuppressWarnings``` 어노테이션으로 필드에서 경고를 숨기자
 - 결국 두 가지 방법 모두 쓰인다. 현업에서는 첫 번째 방법을 선호하고, 힙 오염이 걱정되면 두 번째 방법을 쓰기도 한다. 
 
-### 📌결론
+### 📌 ***결론***
 제네릭 타입은 안전하고 쓰기가 편하지만 만들기는 쉽지않다. 그러므로 쓰기 편할 수 있게 제네릭 타입을 만들어 제공하자. 그렇다면 사용자가 훨씬 편하게 이용할 수 있다.  
 ex ) 사용자가 직접 형변환하지 않아도됨  
 
@@ -358,13 +358,208 @@ public class Collections {
     // ...
 }
 ```
-- 
 
+- 항등함수를 담은 클래스를 만들고 싶다면 다음과 같이 제네릭 싱글턴을 이용해 만들자
+
+```java
+private static UnaryOperator<Object> IDENTITY_FN = (t) -> t;
+
+@SuppressWarnings("unchecked")
+public static <T> UnaryOperator<T> identityFunction() {
+    return (UnaryOperator<T>) IDENTITY_FN;
+}
+```
+
+- 다음은 재귀적 타입 한정을 이용해 상호 비교할 수 있음을 표현한 것이다.
+
+```java
+// 최대값을 반환하는 메서드
+public static <E extends Comparable<E>> E max(Collection<E> c) {
+    if (c.isEmpty())
+        throw new IllegalArgumentException("컬렉션이 비어 있습니다.");
+
+    E result = null;
+    for (E e : c)
+        if (result == null || e.compareTo(result) > 0)
+            result = Objects.requireNonNull(e);
+
+    return result;
+}
+```
+
+- ```<E extends Comparable<E>>```는 "모든 타입 E는 자기 자신과 비교할 수 있다"라고 읽는다.
 
 <br>
 
 ## **⭐️ 아이템 31 : 한정적 와일드카드를 사용해 API 유연성을 높이라**
 
+### 📌 ***한정적 와일드카드를 사용해야 하는 이유***
+- 예를 들어 앞서 제시간 Stack class에 메서드를 추가한다고 생각 해보자 
+```java
+// 와일드카드 타입을 사용하지 않은 pushAll 메서드 - 결함이 있다!
+public void pushAll(Iterable<E> src) {
+    for (E e : src)
+        push(e);
+}
+```
+- 위 메서드는 src의 원소 타입이 Stack의 원소타입과 일치하면 잘 작동한다. 하지만
+
+```java
+Stack<Number> numberStack = new Stack<>();
+Iterable<Integer> integers = Arrays.asList(3, 1, 4, 1, 5, 9);
+numberStack.pushAll(integers);
+```
+- 논리적으로 Integer는 Number의 하위 타입이라 잘 작동할 것 같지만
+- 매개변수화 타입이 불공변이기 때문에 위 코드는 에러가 난다. 
+- 해결 방법은 한정적 와일드카드를 사용하는 것이다.
+
+```java
+// E 생산자(producer) 매개변수에 와일드카드 타입 적용
+public void pushAll(Iterable<? extends E> src) {
+    for (E e : src)
+        push(e);
+}
+```
+
+- 뜻을 해석하면 ```E의 하위타입의 Iterable이어야한다``` 이다..
+- 반대로 popAll 메서드을 작성해보자.
+```java
+// 와일드카드 타입을 사용하지 않은 popAll 메서드 - 결함이 있다! 
+public void popAll(Collection<E> dst) {
+    while (!isEmpty())
+        dst.add(pop());
+}
+```
+
+- 위 코드도 문제 없어보이지만 결함이 있다. ```Stack<Number>```의 원소를 ```Object용 컬렉션```으로 옮기려 한다고 해보자.
+
+```java
+Stack<Number> numberStack = new Stack<>();
+Collection<Object> objects = new ArrayList<>();
+numberStack.popAll(objects);
+```
+
+- 이번에도 불공변이기 때문에 에러가 발생한다. 
+
+```java
+// E 소비자(consumer) 매개변수에 와일드카드 타입 적용
+public void popAll(Collection<? super E> dst) {
+    while (!isEmpty())
+        dst.add(pop());
+}
+```
+
+- 뜻을 해석하면 ```E의 상위 타입의 Collection이어야 한다.``` 이다.
+- 결국 유연성을 극대화 하려면 원소의 생산자나 소비나용 입력 매개변수에 와일드카드 타입을 사용하라.
+- PECS 공식 : producer-expends, consumer-super
+- iteam 30 에서의 max를 한정적 와일드 카드를 적용해 보자.(매우 어렵)
+```java
+public static <E extends Comparable<? super E>> E max(List<? extends E> list) {
+    if (list.isEmpty())
+        throw new IllegalArgumentException("빈 리스트");
+
+    E result = null;
+    for (E e : list)
+        if (result == null || e.compareTo(result) > 0)
+            result = e;
+
+    return result;
+}
+```
+- 입력 매개 변수는 E 인스턴스를 생산하므로 ```List<? extends E>```로 설정한다.
+- ```Comparable<E>```는 E 인스턴스를 소비한다. 따라서 ```Comparable<? super E>```로 설정했다. 
+- 사실 Comparable이나 Comparator은 언제나 소비자이므로 ```Comparable<? super E>```로 설정하면 된다.
+
+### 📌 ***결론***
+와일드카드 타입을 적용하면 API가 훨씬 유연해진다.  
+PECS공식을 기억하여 producer는 extends를 consumer는 super를 사용하자.
+
 <br>
 
 ## **⭐️ 아이템 32 : 제네릭과 가변인수를 함께 쓸 때는 신중하라**
+아이템 28에서 봤듯이 제네릭 varargs 배열 매개변수에 값을 저장하는 것은 타입 안전성을 깨뜨린다. 또한 경고 메시지를 던진다.  
+
+하지만 자바는 가변인수와 제네릭을 같이 사용하는 것을 허용하고 있고 자바라이브러리```(Arrays.asList(T... a), Collections.addAll(Collection<? super T> c, T... elements), EnumSet.of(E first, E... rest)```에서도 이런 메서드를 제공한다. 그 이유는 실무에서 유용하기 때문이다.  
+
+따라서 이를 사용할 때는 자바 7에서 추가된 ```@SafeVarargs``` 어노테이션으로 경고 메시지를 숨기자. 단 신중하게 타입이 안전함이 보장되어야만 어노테이션을 써야한다. 그리고 타입 안정성을 보장할 수 없다면 item28 처럼 List를 고려하자.
+
+### 📌 ***결론***
+가변인수와 제네릭은 그 자체로는 쓸모 있지만 함께 쓰기에는 적합하지 않다. 가변인수 기능은 배열을 노출하여 추상화가 완벽하지 못하고, 배열과 제네릭의 타입 규칙이 서로 다르기 때문이다.  
+제네릭 varargs 매개변수는 타입 안전하지는 않지만, 허용된다. 메서드에 제네릭(혹은 매개변수화된) varargs 매개변수를 사용하고자 한다면, 먼저 그 메서드가 타입 안전한지 확인한 다음 @SafeVarargs 어노테이션을 달아 사용하는 데 불편함이 없게끔하자.
+
+<br>
+
+## **⭐️ 아이템 33 : 타입 안전 이종 컨테이너를 고려하라**
+보통 제네릭은 ```Set<E>, Map<K,V>``` 와 같이 단일원소 컨테이너에서 흔히쓰인다.  
+하지만 종종 컨테이너 자체가 아닌 키를 가져야 할 때가 있다. 이 때 고려되는 방식이 타입 안전 이종 컨테이너 패턴이다.  
+
+- 코드를 보면 쉽게 이해할 수 있다.
+```java
+// 타입 안전 이종 컨테이너 패턴
+public class Favorites {
+    private Map<Class<?>, Object> favorites = new HashMap<>();
+
+    public <T> void putFavorite(Class<T> type, T instance) {
+        favorites.put(Objects.requireNonNull(type), instance);
+    }
+
+    public <T> T getFavorite(Class<T> type) {
+        return type.cast(favorites.get(type));
+    }
+
+    public static void main(String[] args) {
+        Favorites f = new Favorites();
+        
+        f.putFavorite(String.class, "Java");
+        f.putFavorite(Integer.class, 0xcafebabe);
+        f.putFavorite(Class.class, Favorites.class);
+       
+        String favoriteString = f.getFavorite(String.class);
+        int favoriteInteger = f.getFavorite(Integer.class);
+        Class<?> favoriteClass = f.getFavorite(Class.class);
+        
+        System.out.printf("%s %x %s%n", favoriteString,favoriteInteger, favoriteClass.getName());
+    }
+}
+```
+- Class 객체를 매개변수화한 키 역할로 사용해서 타입에 따른 값을 저장한다.
+- 이로써 일반적인 Map과 다르게 여러 타입의 원소를 담을 수 있게 되었다.  
+- 하지만 문제가 있다면 Favorites클래스에는 두 가지 제약이 있다.
+    - 첫번째 
+
+        사용자가 일부로 로 타입으로 Class객체를 넘기면 instance의 타입 안정성이 깨진다.  
+        이때는 동적 형변환을 사용해 런타임 타입 안전성을 확보하자.
+        ```java
+        public <T> void putFavorite(Class<T> type, T instance) {
+            favorites.put(Objects.requireNonNull(type), tye.cast(instance));
+        }
+        ```
+    - 두번째
+
+        실체화 불가 타입에는 사용 할 수 없다.  
+        ```String, String[]```는 저장 되도 ```List<String>```은 저장할 수 없다.  
+        만족스럽게 우회할 수 있는 방법도 없는 편이다.
+        - 스프링에서는 슈퍼 타입 토큰으로 해결하기 위해 ParameterizedTypeReference라는 클래스로 구현해놓았다.
+    
+### 한정적 타입 토큰을 활용하기
+
+```java
+static <T extends Annotation> T getAnnotation(
+        AnnotatedElement element, Class<T> annotationType) {
+    return element.getAnnotation(annotationType);
+}
+```
+- 위 코드는 어노테이션 타입이 키로 된 타입 안전 이종 컨테이너이다.
+- Class<?>를 사용해서 한정적 타입 토큰을 받는 메서드를 넘기기 위해서는 asSubclass 메서드로 형변환 하는 과정이 필요하다.
+```java
+static Annotation getAnnotation(AnnotatedElement element,
+                                String annotationTypeName) {
+    Class<?> annotationType = null; // 비한정적 타입 토큰
+    try {
+        annotationType = Class.forName(annotationTypeName);
+    } catch (Exception ex) {
+        throw new IllegalArgumentException(ex);
+    }
+    return element.getAnnotation(annotationType.asSubclass(Annotation.class));
+}
+```
