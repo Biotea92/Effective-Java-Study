@@ -450,7 +450,7 @@ public void popAll(Collection<? super E> dst) {
 ```
 
 - 뜻을 해석하면 ```E의 상위 타입의 Collection이어야 한다.``` 이다.
-- 결국 유연성을 극대화 하려면 원소의 생산자나 소비나용 입력 매개변수에 와일드카드 타입을 사용하라.
+- 결국 유연성을 극대화 하려면 원소의 생산자나 소비자용 입력 매개변수에 와일드카드 타입을 사용하라.
 - PECS 공식 : producer-expends, consumer-super
 - iteam 30 에서의 max를 한정적 와일드 카드를 적용해 보자.(매우 어렵)
 ```java
@@ -531,7 +531,7 @@ public class Favorites {
         이때는 동적 형변환을 사용해 런타임 타입 안전성을 확보하자.
         ```java
         public <T> void putFavorite(Class<T> type, T instance) {
-            favorites.put(Objects.requireNonNull(type), tye.cast(instance));
+            favorites.put(Objects.requireNonNull(type), type.cast(instance));
         }
         ```
     - 두번째
