@@ -1,27 +1,33 @@
 package org.example.chapter06.item38;
 
-// 코드 38-1 인터페이스를 이용해 확장 가능 열거 타입을 흉내 냈다. - 기본 구현 (233쪽)
+import java.util.function.BiFunction;
+
 public enum BasicOperation implements Operation {
-    PLUS("+") {
-        public double apply(double x, double y) { return x + y; }
-    },
-    MINUS("-") {
-        public double apply(double x, double y) { return x - y; }
-    },
-    TIMES("*") {
-        public double apply(double x, double y) { return x * y; }
-    },
-    DIVIDE("/") {
-        public double apply(double x, double y) { return x / y; }
-    };
+    PLUS("+", (x, y) -> x + y),
+    MINUS("-", (x, y) -> x - y),
+    TIMES("*", (x, y) -> x * y),
+    DIVIDE("/", (x, y) -> x / y);
 
     private final String symbol;
+    private final BiFunction<Double, Double, Double> function;
 
-    BasicOperation(String symbol) {
+    BasicOperation(String symbol, BiFunction<Double, Double, Double> function) {
         this.symbol = symbol;
+        this.function = function;
     }
 
-    @Override public String toString() {
+    @Override
+    public String symbol() {
+        return symbol;
+    }
+
+    @Override
+    public BiFunction<Double, Double, Double> function() {
+        return function;
+    }
+
+    @Override
+    public String toString() {
         return symbol;
     }
 }
