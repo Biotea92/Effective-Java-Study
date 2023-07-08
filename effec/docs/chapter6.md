@@ -263,7 +263,7 @@ public class Text {
 
 <br>
 
-## **⭐️ 아이템 37 : ordinal 인덱싱 대신 EnumMap을 사용하라 사용하라**
+## **⭐️ 아이템 37 : ordinal 인덱싱 대신 EnumMap을 사용하라**
 
 ```java
 // 식물이 일년생인지 다년생인지 이년생인지 나타내는 열거타입
