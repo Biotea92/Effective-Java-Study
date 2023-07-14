@@ -6,16 +6,19 @@ import java.util.TreeMap;
 // map.merge를 이용해 구현한 빈도표 - 람다 방식과 메서드 참조 방식을 비교해보자. (259쪽)
 public class Freq {
     public static void main(String[] args) {
-        Map<String, Integer> frequencyTable = new TreeMap<>();
+        String[] args2 = {"a", "b", "c"};
 
-        for (String s : args)
+        Map<String, Integer> frequencyTable = new TreeMap<>();
+        frequencyTable.put("a", 1);
+        frequencyTable.put("b", 2);
+
+        for (String s : args2)
             frequencyTable.merge(s, 1, (count, incr) -> count + incr); // 람다
         System.out.println(frequencyTable);
 
         frequencyTable.clear();
-        for (String s : args)
+        for (String s : args2)
             frequencyTable.merge(s, 1, Integer::sum); // 메서드 참조
         System.out.println(frequencyTable);
-
     }
 }
