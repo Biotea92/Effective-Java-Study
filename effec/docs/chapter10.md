@@ -33,6 +33,8 @@ for (Mountain m : range)
 
 ## **⭐️ 아이템 70 : 복구할 수 있는 상황에는 검사 예외를, 프로그래밍 오류에는 런타임 예외를 사용하라**
 
+![2019-03-02-java-checked-unchecked-exceptions-1.png](2019-03-02-java-checked-unchecked-exceptions-1.png)
+
 <br>
 
 ## **⭐️ 아이템 71 : 필요 없는 검사 예외 사용은 피하라**
