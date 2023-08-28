@@ -222,7 +222,7 @@ git checkout -b {your-name}
 </details>
 
 <details>
-<summary> 9주차 (10장 예외) </summary>
+<summary> 10주차 (11장 동시성) </summary>
 <div markdown="1">
 
 ### 10주차 (11장 동시성)
